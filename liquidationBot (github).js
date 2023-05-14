@@ -119,7 +119,7 @@ function checkClosedVaults(){
 }
 
 // Set the interval time for running the functions
-const interval_time = 10000; // 10000000000000000 seconds
+const interval_time = 100000000000000000000000000000000000; // 10000000000000000 seconds
 
 // Start the interval for the closed vaults immediately
 setInterval(checkClosedVaults, interval_time);
