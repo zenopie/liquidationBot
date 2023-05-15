@@ -220,7 +220,8 @@ async function send(w, y){
 		gasPriceInFeeDenom: 0.1,
 		feeDenom: "uscrt",
 	});
-	console.log(resp);
+	console.log("sold ", (simamount/1000000), " ", pool_names_array[w], " for ", pool_names_array[y]);
+
 };
 
 findSilkPrices();
