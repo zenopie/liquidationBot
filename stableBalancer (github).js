@@ -3,11 +3,11 @@ import { Wallet, SecretNetworkClient, MsgExecuteContract } from "secretjs";
 
 // create a new wallet instance with a given mnemonic seed phrase
 const wallet = new Wallet(
-  "your seed phrase here",
+  "",
 );
 
 // specify the URL of the Secret Network node to interact with
-const url = "https://lcd-secret.whispernode.com:443";
+const url = "https://lcd.secret.express";
 
 // create a new SecretNetworkClient instance with the specified parameters
 const secretjs = new SecretNetworkClient({
@@ -76,12 +76,12 @@ const snip_hash_array = Object.values(snip_contracts.hash);
 const simamount = '1000000';
 
 // initialize a variable sell_profit_threshold
-var sell_profit_threshold = 0;
+var sell_profit_threshold = 1;
 
 // Define an async function that takes several parameters and returns a computed query result
 // This function calculates the estimated swap price for the given parameters
-async function swapSimulation(pool, hash, token, tokenHash, amount, pathA, pathB){
-	try{
+async function swapSimulation(pool, hash, token, tokenHash, amount, pathA){
+	try {
 		// compute a query to the secret network
 		let swapQuery = await secretjs.query.compute.queryContract({
 			contract_address: pool,
@@ -97,16 +97,15 @@ async function swapSimulation(pool, hash, token, tokenHash, amount, pathA, pathB
 						},
 						amount: amount
 					},
-					path: [pathA, pathB]
+					path: [pathA]
 				}
 			}
 		});
 		// return the estimated swap price from the computed query result
 		return(swapQuery.swap_simulation.price);
 	} catch (error) {
-		// if an error occurs, return nothing
-		return;
-	};
+		throw new Error("Query Failed");
+	}
 };
 
 
@@ -176,30 +175,17 @@ function findPercentDifference(w, x, y, z){
 	console.log('there is a ',percent_difference, '% between the two prices');
 	// Check if the percentage difference exceeds the sell profit threshold
 	if (percent_difference >= sell_profit_threshold) {
-	  console.log('sell profit threshold reached');
-
-
-
-
-
-
-
-
-
-
-
-//////////send to router instead of to swap pool
-
-
-
+	  	console.log('sell profit threshold reached');
+		send(w,y);
 	} else {
 	  console.log('sell profit threshold not reached');
 	}
   };
   
-async function buyStkdscrt(w, y){
+
+async function send(w, y){
 	let hookmsg = {
-		swap_tokens: {
+		swap_tokens_for_exact: {
 			offer: {
 				token: {
 					custom_token: {
@@ -209,29 +195,33 @@ async function buyStkdscrt(w, y){
 				},
 				amount: simamount
 			},
-			path: [  ]
+			path: [
+				{"addr":pool_contract_array[w],"code_hash": pool_hash_array[w]}, 
+				{"addr": pool_contract_array[y], "code_hash":  pool_hash_array[y]},
+			],
 		}
 	}
 	let hookmsg64 = Buffer.from(JSON.stringify(hookmsg)).toString("base64");
 	let msg = new MsgExecuteContract({
 		sender: secretjs.address,
-		contract_address: sscrt_contract,
-		code_hash: sscrt_hash,
+		contract_address: snip_contracts_array[w],
+		code_hash: snip_hash_array[w],
 		msg: {
 			send: {
-				recipient: swap_contract,
-				recipient_code_hash: swap_contract_hash,
-				amount: simAmount,
+				recipient: "secret1pjhdug87nxzv0esxasmeyfsucaj98pw4334wyc",
+				recipient_code_hash: "448e3f6d801e453e838b7a5fbaa4dd93b84d0f1011245f0d5745366dadaf3e85",
+				amount: simamount,
 				msg: hookmsg64
 			}
 		}
 	});
 	let resp = await secretjs.tx.broadcast([msg], {
-		gasLimit: 1_000_000,
+		gasLimit: 5_000_000,
 		gasPriceInFeeDenom: 0.1,
 		feeDenom: "uscrt",
 	});
-	console.log('bought stkd-scrt');
+	console.log(resp);
 };
 
 findSilkPrices();
+console.log("🌎");
